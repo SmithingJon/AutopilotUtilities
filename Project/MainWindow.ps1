@@ -304,6 +304,25 @@ $formMainWindowControlSerialNumberLabel.Content = $SerialNumber
 
 $BiosVersion = ((Get-CimInstance -ClassName Win32_BIOS).SMBIOSBIOSVersion).Trim()
 $formMainWindowControlBiosVersionLabel.Content = "BIOS $BiosVersion"
+
+if (Test-IntuneRecord) {
+    $formMainWindowControlIntuneRecordLabel.Content = "Intune Enrolled"
+    $formMainWindowControlIntuneRecordLabel.Background - "Green"
+}
+else {
+    $formMainWindowControlIntuneRecordLabel.Content = "Intune not Enrolled"
+    $formMainWindowControlntuneRecordLabel.Background - "Orange"
+}
+
+if (Test-AutopilotRecord) {
+    $formMainWindowControlAutopilotRecordLabel.Content = "Autopilot Enrolled"
+    $formMainWindowControlAutopilotRecordLabel.Background - "Green"
+}
+else {
+    $formMainWindowControlAutopilotRecordLabel.Content = "Autopilot not Enrolled"
+    $formMainWindowControlAutopilotRecordLabel.Background - "Orange"
+}
+
 #================================================
 #   Parameters
 #================================================
@@ -657,13 +676,13 @@ $formMainWindowControlDocsButton.add_Click( {
     }
 })
 #================================================
-#   RegisterButton
+#   ApplyButton
 #================================================
 if ($env:UserName -ne 'defaultuser0') {
-    $formMainWindowControlRegisterButton.IsEnabled = $false
+    $formMainWindowControlApplyButton.IsEnabled = $false
 }
 
-$formMainWindowControlRegisterButton.add_Click( {
+$formMainWindowControlApplyButton.add_Click( {
     $formMainWindow.Close()
     Show-PowershellWindow
 

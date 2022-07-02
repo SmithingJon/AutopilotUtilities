@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Start_AutopilotOOBEExistingGUI.Properties
+namespace ExistingAutopilotOOBE.Properties
 {
 
 

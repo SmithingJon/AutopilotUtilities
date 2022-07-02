@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Start_AutopilotOOBEExistingGUI.Properties
+namespace ExistingAutopilotOOBE.Properties
 {
 
 
@@ -44,7 +44,7 @@ namespace Start_AutopilotOOBEExistingGUI.Properties
             {
                 if ((resourceMan == null))
                 {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Start_AutopilotOOBEExistingGUI.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ExistingAutopilotOOBE.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

@@ -143,7 +143,53 @@
 
         <Border Grid.Column = "0" Grid.Row = "6" Background = "Transparent"/>
         <Border Grid.Column = "4" Grid.Row = "6" Background = "Transparent"/>
-
+        <StackPanel Grid.Column = "4" Grid.ColumnSpan="2" Grid.Row = "4" VerticalAlignment = "Bottom" HorizontalAlignment = "Right" Width="180">
+            <Label Name="GroupsHeader"
+                   Content="IN GROUPS"
+                   FlowDirection="RightToLeft"
+                   FontFamily="Segoe UI"
+                   FontSize="11"
+                   FontWeight="Bold"
+                   HorizontalAlignment = "Right"
+                   Padding = "5,1,5,0"
+                   Width = "100"
+                />
+            <ListView Name="GroupsListView"
+                      Background="Transparent"
+                      Height="Auto"
+                      Width="250"
+                      Padding="5,1,-5,0"
+                      FontFamily="Segoe UI"
+                      FontSize="11"
+                      HorizontalAlignment="Right"
+                      BorderThickness="0"
+                      BorderBrush="Transparent"
+                      FlowDirection="RightToLeft" Focusable="False" IsHitTestVisible="False" IsTextSearchEnabled="False"
+                      
+                />
+            <Label Name = "IntuneStatusLabel"
+                Content = "Intune Enrolled"
+                Background = "Green"
+                FlowDirection="RightToLeft"
+                FontFamily = "Segoe UI"
+                FontSize = "11"
+                Foreground = "White"
+                HorizontalAlignment = "Right"
+                Padding = "5,1,5,0"
+                Width = "100"
+            />
+            <Label Name = "AutopilotStatusLabel"
+                Content = "Autopilot Enrolled"
+                Background = "Green"
+                FlowDirection="RightToLeft"
+                FontFamily = "Segoe UI"
+                FontSize = "11"
+                Foreground = "White"
+                HorizontalAlignment = "Right"
+                Padding = "5,1,5,0"
+                Width = "100"
+            />        
+        </StackPanel>
         <StackPanel Grid.Column = "4" Grid.ColumnSpan="2" Grid.Row = "6" VerticalAlignment = "Bottom" HorizontalAlignment = "Right">
             <Label Name = "CSManufacturerControl"
             Content = "Computer Manufacturer"
@@ -203,28 +249,6 @@
             Padding = "5,1,5,0"
             Width = "100"
             />
-            <Label Name = "IntuneStatusLabel"
-            Content = "Intune Enrolled"
-            Background = "Green"
-            FlowDirection="RightToLeft"
-            FontFamily = "Segoe UI"
-            FontSize = "11"
-            Foreground = "White"
-            HorizontalAlignment = "Right"
-            Padding = "5,1,5,0"
-            Width = "100"
-            />
-            <Label Name = "AutopilotStatusLabel"
-            Content = "Autopilot Enrolled"
-            Background = "Green"
-            FlowDirection="RightToLeft"
-            FontFamily = "Segoe UI"
-            FontSize = "11"
-            Foreground = "White"
-            HorizontalAlignment = "Right"
-            Padding = "5,1,5,0"
-            Width = "100"
-            />        
         </StackPanel>
 
         <StackPanel Grid.Column = "0" Grid.ColumnSpan = "5" Grid.Row = "1">
@@ -295,18 +319,17 @@
                 Width = "380"
                 />
             </StackPanel>
+            <StackPanel x:Name = "AddGroupStackPanel" Orientation = "Horizontal" HorizontalAlignment = "Right" VerticalAlignment = "Center" Margin = "7">
 
-            <StackPanel x:Name = "AddToGroupStackPanel" Orientation = "Horizontal" HorizontalAlignment = "Right" VerticalAlignment = "Center" Margin = "7">
                 <Label
-                Name = "AddToGroupLabel"
-                Content = "AddToGroup:"
-                FontFamily = "Segoe UI"
-                FontSize = "15"
+                Name = "DeploymentGroupLabel"
+                Content = "DeploymentGroup:"
+                FontFamily = "Segoe UI" FontSize = "15"
                 Foreground = "Black"
                 />
 
                 <ComboBox
-                Name = "AddToGroupComboBox"
+                Name = "DeploymentGroupComboBox"
                 BorderThickness = "2"
                 FontFamily = "Segoe UI"
                 FontSize = "15"
@@ -314,10 +337,12 @@
                 Foreground = "Black"
                 Height = "40"
                 IsEditable = "true"
-                Width = "380"
                 Padding = "8"
+                Width = "380"
                 />
+
             </StackPanel>
+
 
             <StackPanel x:Name = "AssignedComputerNameStackPanel" Orientation = "Horizontal" HorizontalAlignment = "Right" VerticalAlignment = "Center" Margin = "7">
                 <Label Name = "AssignedComputerNameLabel"

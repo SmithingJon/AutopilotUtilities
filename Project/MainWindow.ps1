@@ -140,13 +140,13 @@ foreach($x in $vx)
 ############################
 ## FORMS AND CONTROLS OUTPUT
 ############################
-<# Write-Host -ForegroundColor Cyan "The following forms were created:"
+Write-Host -ForegroundColor Cyan "The following forms were created:"
 $forms | %{ Write-Host -ForegroundColor Yellow "  `$$_"} #output all forms to screen
 if($controls.Count -gt 0){
     Write-Host ""
     Write-Host -ForegroundColor Cyan "The following controls were created:"
     $controls | %{ Write-Host -ForegroundColor Yellow "  `$$_"} #output all named controls to screen
-} #>
+}
 #######################
 ## DISABLE A/V AUTOPLAY
 #######################
@@ -240,7 +240,7 @@ function Start-BackgroundScriptBlock($scriptBlock){
 #================================================
 #   Customizations
 #================================================
-[string]$ModuleVersion = Get-Module -Name AutopilotOOBE | Sort-Object -Property Version | Select-Object -ExpandProperty Version -Last 1
+[string]$ModuleVersion = Get-Module -Name AutopilotUtilities | Sort-Object -Property Version | Select-Object -ExpandProperty Version -Last 1
 #================================================
 #   Window Functions
 #   Minimize Command and PowerShell Windows
@@ -305,28 +305,35 @@ $formMainWindowControlSerialNumberLabel.Content = $SerialNumber
 $BiosVersion = ((Get-CimInstance -ClassName Win32_BIOS).SMBIOSBIOSVersion).Trim()
 $formMainWindowControlBiosVersionLabel.Content = "BIOS $BiosVersion"
 
-if (Test-IntuneRecord) {
-    $formMainWindowControlIntuneRecordLabel.Content = "Intune Enrolled"
-    $formMainWindowControlIntuneRecordLabel.Background - "Green"
+if (Test-IntuneEnrollment) {
+    $formMainWindowControlIntuneStatusLabel.Content = "Intune Enrolled"
+    $formMainWindowControlIntuneStatusLabel.Background = "Green"
 }
 else {
-    $formMainWindowControlIntuneRecordLabel.Content = "Intune not Enrolled"
-    $formMainWindowControlntuneRecordLabel.Background - "Orange"
+    $formMainWindowControlIntuneStatusLabel.Content = "Intune not Enrolled"
+    $formMainWindowControlntuneStatusLabel.Background = "Orange"
 }
 
 if (Test-AutopilotRecord) {
-    $formMainWindowControlAutopilotRecordLabel.Content = "Autopilot Enrolled"
-    $formMainWindowControlAutopilotRecordLabel.Background - "Green"
+    $formMainWindowControlAutopilotStatusLabel.Content = "Autopilot Enrolled"
+    $formMainWindowControlAutopilotStatusLabel.Background = "Green"
 }
 else {
-    $formMainWindowControlAutopilotRecordLabel.Content = "Autopilot not Enrolled"
-    $formMainWindowControlAutopilotRecordLabel.Background - "Orange"
+    $formMainWindowControlAutopilotStatusLabel.Content = "Autopilot not Enrolled"
+    $formMainWindowControlAutopilotStatusLabel.Background = "Orange"
+}
+#================================================
+#   Groups/Enrollment Sidebar
+#================================================
+$CurrentGroupMembership = (Get-ManagedDeviceGroupMembership -deviceSerial $SerialNumber).Name
+$CurrentGroupMembership | ForEach-Object {
+    $formMainWindowControlGroupsListView.Items.Add($_) | Out-Null
 }
 
 #================================================
 #   Parameters
 #================================================
-$AutopilotOOBEParams = (Get-Command Start-AutopilotOOBE).Parameters
+$AutopilotOOBEParams = (Get-Command Start-AutopilotUtilities).Parameters
 #================================================
 #   Heading
 #================================================
@@ -368,29 +375,29 @@ $Global:AutopilotOOBE.GroupTagOptions | ForEach-Object {
 
 # Set the ComboBox Default
 if ($Global:AutopilotOOBE.GroupTag) {
-    $formMainWindowControlGroupTagComboBox.Text = $Global:AutopilotOOBE.GroupTag
+    $formMainWindowControlGroupTagComboBox.Text = (Get-AutopilotRecord).groupTag
 }
 #================================================
-#   AddToGroup Control
+#   DeploymentGroup Control
 #================================================
 # Disable the Control
-if ($Disabled -contains 'AddToGroup') {
-    $formMainWindowControlAddToGroupComboBox.IsEnabled = $false
+if ($Disabled -contains 'DeploymentGroup') {
+    $formMainWindowControlDeploymentGroupComboBox.IsEnabled = $false
 }
 
 # Hide the Control
-if ($Hidden -contains 'AddToGroup') {
-    $formMainWindowControlAddToGroupStackPanel.Visibility = 'Collapsed'
+if ($Hidden -contains 'DeploymentGroup') {
+    $formMainWindowControlDeploymentGroupStackPanel.Visibility = 'Collapsed'
 }
 
 # Populate the Control
-$Global:AutopilotOOBE.AddToGroupOptions | ForEach-Object {
-    $formMainWindowControlAddToGroupComboBox.Items.Add($_) | Out-Null
+$Global:AutopilotOOBE.DeploymentGroupOptions | ForEach-Object {
+    $formMainWindowControlDeploymentGroupComboBox.Items.Add($_) | Out-Null
 }
 
 # Set the Default
-if ($Global:AutopilotOOBE.AddToGroup) {
-    $formMainWindowControlAddToGroupComboBox.Text = $Global:AutopilotOOBE.AddToGroup
+if ($Global:AutopilotOOBE.DeploymentGroup) {
+    $formMainWindowControlDeploymentGroupComboBox.Text = $Global:AutopilotOOBE.DeploymentGroup
 }
 #================================================
 #   AssignedComputerName Control
@@ -406,7 +413,8 @@ if ($Hidden -contains 'AssignedComputerName') {
 }
 
 # Populate the Control
-$formMainWindowControlAssignedComputerNameTextBox.Text = $Global:AutopilotOOBE.AssignedComputerNameExample
+(Get-IntuneWindowsDevice).Name
+$formMainWindowControlAssignedComputerNameTextBox.Text = (Get-IntuneWindowsDevice).deviceName
 if ($Global:AutopilotOOBE.AssignedComputerName -gt 0) {
     $formMainWindowControlAssignedComputerNameTextBox.Text = $Global:AutopilotOOBE.AssignedComputerName
 }
@@ -694,8 +702,8 @@ $formMainWindowControlApplyButton.add_Click( {
         $Params.Assign = $true
     }
 
-    if ($formMainWindowControlAddToGroupComboBox.Text -gt 0) {
-        $Params.AddToGroup = $formMainWindowControlAddToGroupComboBox.Text
+    if ($formMainWindowControlDeploymentGroupComboBox.Text -gt 0) {
+        $Params.DeploymentGroup = $formMainWindowControlDeploymentGroupComboBox.Text
     }
 
     if ($formMainWindowControlGroupTagComboBox.Text -gt 0) {

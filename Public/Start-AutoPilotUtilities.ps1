@@ -19,7 +19,7 @@ function Start-AutopilotUtilities {
 
         [ValidateSet (
             'GroupTag',
-            'AddToGroup',
+            'DeploymentGroup',
             'AssignedUser',
             'AssignedComputerName',
             'PostAction',
@@ -29,19 +29,19 @@ function Start-AutopilotUtilities {
 
         [ValidateSet (
             'GroupTag',
-            'AddToGroup',
+            'DeploymentGroup',
             'AssignedUser',
             'AssignedComputerName',
             'PostAction',
             'Assign',
-            'Register',
+            'Apply',
             'Run',
             'Docs'
         )]
         [string[]]$Hidden,
 
-        [string]$AddToGroup,
-        [string[]]$AddToGroupOptions,
+        [string]$DeploymentGroup,
+        [string[]]$DeploymentGroupOptions,
         [switch]$Assign,
         [string]$AssignedUser,
         [string]$AssignedUserExample = 'someone@example.com',
@@ -49,6 +49,9 @@ function Start-AutopilotUtilities {
         [string]$AssignedComputerNameExample = 'Azure AD Join Only',
         [string]$GroupTag,
         [string[]]$GroupTagOptions,
+        [switch]$deleteIntune,
+        [switch]$deleteAutopilot,
+        [switch]$deleteAzure,
         [ValidateSet (
             'Quit',
             'Restart',
@@ -82,29 +85,23 @@ function Start-AutopilotUtilities {
         )]
         [string]$Run = 'PowerShell',
         [string]$Docs,
-        [string]$Title = 'Autopilot Options'
+        [string]$Title = 'Autopilot Utilities'
     )
 
-#region Determine if device is Intune and Autopilot Enrolled
-if ((Test-IntuneEnrollment) -and (!(Test-AutopilotRecord))) {
-    $Disabled = ""
-}
-# Test-AutopilotRecord
-#endregion
     #================================================
     #   WinPE and WinOS Start
     #================================================
     if ($env:SystemDrive -eq 'X:') {
         Write-Host -ForegroundColor DarkGray "========================================================================="
-        Write-Host -ForegroundColor Green "Start-AutopilotOOBE in WinPE"
+        Write-Host -ForegroundColor Green "Start-AutopilotUtilities in WinPE"
         $ProgramDataOSDeploy = 'C:\ProgramData\OSDeploy'
-        $JsonPath = "$ProgramDataOSDeploy\OSDeploy.AutopilotOOBE.json"
+        $JsonPath = "$ProgramDataOSDeploy\OSDeploy.AutopilotUtilities.json"
     }
     if ($env:SystemDrive -ne 'X:') {
         Write-Host -ForegroundColor DarkGray "========================================================================="
-        Write-Host -ForegroundColor Green "Start-AutopilotOOBE"
+        Write-Host -ForegroundColor Green "Start-AutopilotUtilities"
         $ProgramDataOSDeploy = "$env:ProgramData\OSDeploy"
-        $JsonPath = "$ProgramDataOSDeploy\OSDeploy.AutopilotOOBE.json"
+        $JsonPath = "$ProgramDataOSDeploy\OSDeploy.AutopilotUtilities.json"
     }
     #================================================
     #   WinOS Transcript
@@ -112,9 +109,9 @@ if ((Test-IntuneEnrollment) -and (!(Test-AutopilotRecord))) {
     if ($env:SystemDrive -ne 'X:') {
         Write-Host -ForegroundColor DarkGray "========================================================================="
         Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Start-Transcript"
-        $Transcript = "$((Get-Date).ToString('yyyy-MM-dd-HHmmss'))-Start-AutopilotOOBE.log"
+        $Transcript = "$((Get-Date).ToString('yyyy-MM-dd-HHmmss'))-Start-AutopilotUtilities.log"
         Start-Transcript -Path (Join-Path "$env:SystemRoot\Temp" $Transcript) -ErrorAction Ignore
-        $host.ui.RawUI.WindowTitle = "Start-AutopilotOOBE $env:SystemRoot\Temp\$Transcript"
+        $host.ui.RawUI.WindowTitle = "Start-AutopilotUtilities $env:SystemRoot\Temp\$Transcript"
     }
     #================================================
     #   WinOS Console Disable Line Wrap
@@ -125,7 +122,7 @@ if ((Test-IntuneEnrollment) -and (!(Test-AutopilotRecord))) {
     #================================================
     if ($CustomProfile -eq 'Sample') {
         $Title = 'Sample Autopilot Registration'
-        $AddToGroup = 'Administrators'
+        $DeploymentGroup = 'Administrators'
         $AssignedComputerName = 'OSD-' + ((Get-CimInstance -ClassName Win32_BIOS).SerialNumber).Trim()
         $PostAction = 'Shutdown'
         $Assign = $true
@@ -138,7 +135,7 @@ if ((Test-IntuneEnrollment) -and (!(Test-AutopilotRecord))) {
     #================================================
     if ($CustomProfile) {
         Write-Host -ForegroundColor DarkGray "========================================================================="
-        Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Loading AutopilotOOBE Custom Profile $CustomProfile"
+        Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Loading AutopilotUtilities Custom Profile $CustomProfile"
 
         $CustomProfileJson = Get-ChildItem "$($MyInvocation.MyCommand.Module.ModuleBase)\CustomProfile" *.json | Where-Object {$_.BaseName -eq $CustomProfile} | Select-Object -First 1
 
@@ -153,10 +150,10 @@ if ((Test-IntuneEnrollment) -and (!(Test-AutopilotRecord))) {
     #================================================
     if (Test-Path $JsonPath) {
         Write-Host -ForegroundColor DarkGray "Importing Configuration $JsonPath"
-        $ImportAutopilotOOBE = @()
-        $ImportAutopilotOOBE = Get-Content -Raw -Path $JsonPath | ConvertFrom-Json
+        $ImportAutopilotUtilities = @()
+        $ImportAutopilotUtilities = Get-Content -Raw -Path $JsonPath | ConvertFrom-Json
     
-        $ImportAutopilotOOBE.PSObject.Properties | ForEach-Object {
+        $ImportAutopilotUtilities.PSObject.Properties | ForEach-Object {
             if ($_.Value -match 'IsPresent=True') {
                 $_.Value = $true
             }
@@ -182,53 +179,16 @@ if ((Test-IntuneEnrollment) -and (!(Test-AutopilotRecord))) {
             Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Set-PSRepository -Name PSGallery -InstallationPolicy Trusted"
             Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
         }
-        #================================================
-        #   Watch-AutopilotOOBEevents
-        #================================================
-        Write-Host -ForegroundColor DarkGray "========================================================================="
-        Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Watch-AutopilotOOBEevents"
-        Write-Host -ForegroundColor DarkCyan 'The EventLog is being monitored for MDM Diagnostic Events in a minimized window'
-        Write-Host -ForegroundColor DarkCyan 'Use Alt+Tab to view the progress in the separate PowerShell session'
-        Start-Process PowerShell.exe -WindowStyle Minimized -ArgumentList "-NoExit -Command Watch-AutopilotOOBEevents"
-        #================================================
-        #   Test-AutopilotOOBEnetwork
-        #================================================
-        Write-Host -ForegroundColor DarkGray "========================================================================="
-        Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Test-AutopilotOOBEnetwork"
-        Write-Host -ForegroundColor DarkCyan 'Required Autopilot network addresses are being tested in a minimized window'
-        Write-Host -ForegroundColor DarkCyan 'Use Alt+Tab to view the progress in the separate PowerShell session'
-        Start-Process PowerShell.exe -WindowStyle Minimized -ArgumentList "-NoExit -Command Test-AutopilotOOBEnetwork"
+ 
 <#        #================================================
-        #   Test-AutopilotRegistry
+        #   Test-AutopilotRecord
         #================================================
         Write-Host -ForegroundColor DarkGray "========================================================================="
-        Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Test-AutopilotRegistry"
-        Write-Host -ForegroundColor DarkCyan 'Gathering Autopilot Registration information from the Registry'
-        $Global:RegAutoPilot = Get-ItemProperty 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Provisioning\Diagnostics\AutoPilot'
-        
-        Write-Host -ForegroundColor Gray "IsAutoPilotDisabled: $($Global:RegAutoPilot.IsAutoPilotDisabled)"
-        Write-Host -ForegroundColor Gray "CloudAssignedForcedEnrollment: $($Global:RegAutoPilot.CloudAssignedForcedEnrollment)"
-        Write-Host -ForegroundColor Gray "CloudAssignedTenantDomain: $($Global:RegAutoPilot.CloudAssignedTenantDomain)"
-        Write-Host -ForegroundColor Gray "CloudAssignedTenantId: $($Global:RegAutoPilot.CloudAssignedTenantId)"
-        Write-Host -ForegroundColor Gray "CloudAssignedTenantUpn: $($Global:RegAutoPilot.CloudAssignedTenantUpn)"
-        Write-Host -ForegroundColor Gray "CloudAssignedLanguage: $($Global:RegAutoPilot.CloudAssignedLanguage)"
-    
-        if ($Global:RegAutoPilot.CloudAssignedForcedEnrollment -eq 1) {
-            Write-Host -ForegroundColor Gray "TenantId: $($Global:RegAutoPilot.TenantId)"
-            Write-Host -ForegroundColor Gray "CloudAssignedMdmId: $($Global:RegAutoPilot.CloudAssignedMdmId)"
-            Write-Host -ForegroundColor Gray "AutopilotServiceCorrelationId: $($Global:RegAutoPilot.AutopilotServiceCorrelationId)"
-            Write-Host -ForegroundColor Gray "CloudAssignedOobeConfig: $($Global:RegAutoPilot.CloudAssignedOobeConfig)"
-            Write-Host -ForegroundColor Gray "CloudAssignedTelemetryLevel: $($Global:RegAutoPilot.CloudAssignedTelemetryLevel)"
-            Write-Host -ForegroundColor Gray "IsDevicePersonalized: $($Global:RegAutoPilot.IsDevicePersonalized)"
-            Write-Host -ForegroundColor Gray "SetTelemetryLevel_Succeeded_With_Level: $($Global:RegAutoPilot.SetTelemetryLevel_Succeeded_With_Level)"
-            Write-Host -ForegroundColor Gray "IsForcedEnrollmentEnabled: $($Global:RegAutoPilot.IsForcedEnrollmentEnabled)"
-            Write-Host -ForegroundColor Green "This device has already been Autopilot Registered. Registration will not be enabled"
-            Start-Sleep -Seconds 2
-            $Disabled = 'GroupTag','AddToGroup','AssignedComputerName','PostAction','Assign'
-            $Hidden = 'GroupTag','AddToGroup','AssignedComputerName','PostAction','Assign','Register'
-            $Run = 'MDMDiagAutopilotTPM'
-            $Title = 'Autopilot Registration Information'
-        } #>
+        Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Test-AutopilotRecord"
+        Write-Host -ForegroundColor DarkCyan 'Gathering Autopilot Registration'
+        if (Test-AutopilotRecord) {
+
+        }#>
         #================================================
         #   Date Time
         #================================================
@@ -239,25 +199,28 @@ if ((Test-IntuneEnrollment) -and (!(Test-AutopilotRecord))) {
         Get-TimeZone
         Start-Sleep -Seconds 5
         #================================================
-        #   RegisterButton
+        #   ApplyButton
         #================================================
         if ($env:UserName -ne 'defaultuser0') {
-            Write-Warning 'The register button is disabled when the UserName is not defaultuser0'
+            Write-Warning 'The Apply button is disabled when the UserName is not defaultuser0'
             Start-Sleep -Seconds 5
         }
     }
     #================================================
     #   WinPE and WinOS Configuration Json
     #================================================
-    $Global:AutopilotOOBE = [ordered]@{
-        AddToGroup = $AddToGroup
-        AddToGroupOptions = $AddToGroupOptions
+    $Global:AutopilotUtilities = [ordered]@{
+        DeploymentGroup = $DeploymentGroup
+        DeploymentGroupOptions = $DeploymentGroupOptions
         Assign = $Assign
         AssignedComputerName = $AssignedComputerName
         AssignedComputerNameExample = $AssignedComputerNameExample
         Disabled = $Disabled
         GroupTag = $GroupTag
         GroupTagOptions = $GroupTagOptions
+        DeleteIntune = $deleteIntune
+        DeleteAutopilot = $deleteAutopilot
+        DeleteAzure = $deleteAzure
         Hidden = $Hidden
         PostAction = $PostAction
         Run = $Run
@@ -266,23 +229,23 @@ if ((Test-IntuneEnrollment) -and (!(Test-AutopilotRecord))) {
     }
     if ($env:SystemDrive -eq 'X:') {
         if (!(Test-Path "$ProgramDataOSDeploy")) {New-Item "$ProgramDataOSDeploy" -ItemType Directory -Force | Out-Null}
-        Write-Host -ForegroundColor DarkGray "Exporting Configuration $ProgramDataOSDeploy\OSDeploy.AutopilotOOBE.json"
-        @($Global:AutopilotOOBE.Keys) | ForEach-Object { 
-            if (-not $Global:AutopilotOOBE[$_]) { $Global:AutopilotOOBE.Remove($_) }
+        Write-Host -ForegroundColor DarkGray "Exporting Configuration $ProgramDataOSDeploy\OSDeploy.AutopilotUtilities.json"
+        @($Global:AutopilotUtilities.Keys) | ForEach-Object { 
+            if (-not $Global:AutopilotUtilities[$_]) { $Global:AutopilotUtilities.Remove($_) }
         }
-        $Global:AutopilotOOBE | ConvertTo-Json | Out-File "$ProgramDataOSDeploy\OSDeploy.AutopilotOOBE.json" -Force
+        $Global:AutopilotUtilities | ConvertTo-Json | Out-File "$ProgramDataOSDeploy\OSDeploy.AutopilotUtilities.json" -Force
     }
     else {
-        Write-Host -ForegroundColor DarkGray "Exporting Configuration $env:Temp\OSDeploy.AutopilotOOBE.json"
-        @($Global:AutopilotOOBE.Keys) | ForEach-Object { 
-            if (-not $Global:AutopilotOOBE[$_]) { $Global:AutopilotOOBE.Remove($_) }
+        Write-Host -ForegroundColor DarkGray "Exporting Configuration $env:Temp\OSDeploy.AutopilotUtilities.json"
+        @($Global:AutopilotUtilities.Keys) | ForEach-Object { 
+            if (-not $Global:AutopilotUtilities[$_]) { $Global:AutopilotUtilities.Remove($_) }
         }
-        $Global:AutopilotOOBE | ConvertTo-Json | Out-File "$env:Temp\OSDeploy.AutopilotOOBE.json" -Force
+        $Global:AutopilotUtilities | ConvertTo-Json | Out-File "$env:Temp\OSDeploy.AutopilotUtilities.json" -Force
         #================================================
         #   Launch
         #================================================
         Write-Host -ForegroundColor DarkGray "========================================================================="
-        Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Starting AutopilotOOBE GUI"
+        Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Starting AutopilotUtilities GUI"
         Start-Sleep -Seconds 1
         & "$($MyInvocation.MyCommand.Module.ModuleBase)\Project\MainWindow.ps1"
         #================================================

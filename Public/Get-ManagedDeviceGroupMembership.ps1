@@ -121,7 +121,7 @@ function Get-ManagedDeviceGroupMembership{
             'Direct or Transitive'
             'Membership Rule'
             'Membership Rule Processing State'
-        ) | foreach {
+        ) | ForEach-Object {
             $Columns += [System.Data.DataColumn]::new("$_")
         }
         $DataTable.Columns.AddRange($Columns)
@@ -129,16 +129,16 @@ function Get-ManagedDeviceGroupMembership{
         # Add the groups
         foreach ($Group in $Groups)
         {
-            If (($Group.groupTypes | Select -First 1) -eq "DynamicMembership")
+            If (($Group.groupTypes | Select-Object -First 1) -eq "DynamicMembership")
             {$MembershipType = "Dynamic"}
             Else {$MembershipType = "Assigned"}
             [void]$DataTable.Rows.Add($Group.displayName,$Group.description,$Group.id,$MembershipType,"Direct",$Group.membershipRule,$Group.membershipRuleProcessingState)
         }
 
         # Add the transitive groups
-        foreach ($TransitiveGroup in ($TransitiveGroups | where {$_.id -NotIn $Groups.id}))
+        foreach ($TransitiveGroup in ($TransitiveGroups | Where-Object {$_.id -NotIn $Groups.id}))
         {
-            If (($TransitiveGroup.groupTypes | Select -First 1) -eq "DynamicMembership")
+            If (($TransitiveGroup.groupTypes | Select-Object -First 1) -eq "DynamicMembership")
             {$MembershipType = "Dynamic"}
             Else {$MembershipType = "Assigned"}
             [void]$DataTable.Rows.Add($TransitiveGroup.displayName,$TransitiveGroup.description,$TransitiveGroup.id,$MembershipType,"Transitive",$TransitiveGroup.membershipRule,$TransitiveGroup.membershipRuleProcessingState)

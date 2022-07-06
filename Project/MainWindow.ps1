@@ -262,9 +262,9 @@ function Show-PowershellWindow() {
     $null = $showWindowAsync::ShowWindowAsync((Get-Process -Id $pid).MainWindowHandle, 10)
 }
 #================================================
-#   Sidebar
+#   Intune/Autopilot/Azure Sidebar/Logic
 #================================================
-if (Test-AutopilotOOBEconnection) {
+if (Test-AutopilotUtilitiesconnection) {
     $formMainWindowControlOnlineStatusLabel.Background = 'Green'
 }
 else {
@@ -308,19 +308,38 @@ $formMainWindowControlBiosVersionLabel.Content = "BIOS $BiosVersion"
 if (Test-IntuneEnrollment) {
     $formMainWindowControlIntuneStatusLabel.Content = "Intune Enrolled"
     $formMainWindowControlIntuneStatusLabel.Background = "Green"
+    $formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $false
+    # Add Click
+    $formMainWindowControlDeleteIntuneCheckbox.add_Click( {
+        switch ($formMainWindowControlDeleteIntuneCheckbox.IsChecked) {
+        $true   {$formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $true }
+        $false  {$formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $false ; $formMainWindowControlDeleteAzureCheckbox.IsEnabled = $false ; $formMainWindowControlDeleteAutoPilotCheckbox.IsChecked = $false ; $formMainWindowControlDeleteAzureCheckbox.IsChecked = $false}
+        }
+    })
 }
 else {
     $formMainWindowControlIntuneStatusLabel.Content = "Intune not Enrolled"
     $formMainWindowControlntuneStatusLabel.Background = "Orange"
+    $formMainWindowControlDeleteIntuneCheckbox.IsEnabled = $false
+    $formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $true
 }
 
 if (Test-AutopilotRecord) {
     $formMainWindowControlAutopilotStatusLabel.Content = "Autopilot Enrolled"
     $formMainWindowControlAutopilotStatusLabel.Background = "Green"
+    $formMainWindowControlDeleteAzureCheckbox.IsEnabled = $false
+    # Add Click
+    $formMainWindowControlDeleteAutopilotCheckbox.add_Click( {
+        switch ($formMainWindowControlDeleteAutopilotCheckbox.IsChecked) {
+        $true   {$formMainWindowControlDeleteAzureCheckbox.IsEnabled = $true }
+        $false  {$formMainWindowControlDeleteAzureCheckbox.IsEnabled = $false ; $formMainWindowControlDeleteAzureCheckbox.IsChecked = $false }
+        }
+    })
 }
 else {
     $formMainWindowControlAutopilotStatusLabel.Content = "Autopilot not Enrolled"
     $formMainWindowControlAutopilotStatusLabel.Background = "Orange"
+    $formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $false
 }
 #================================================
 #   Groups/Enrollment Sidebar
@@ -333,11 +352,11 @@ $CurrentGroupMembership | ForEach-Object {
 #================================================
 #   Parameters
 #================================================
-$AutopilotOOBEParams = (Get-Command Start-AutopilotUtilities).Parameters
+$AutopilotUtilitiesParams = (Get-Command Start-AutopilotUtilities).Parameters
 #================================================
 #   Heading
 #================================================
-$formMainWindowControlHeading.Content = $Global:AutopilotOOBE.Title
+$formMainWindowControlHeading.Content = $Global:AutopilotUtilities.Title
 #================================================
 #   SubHeading
 #================================================
@@ -369,12 +388,12 @@ if ($Hidden -contains 'GroupTag') {
 }
 
 # Populate the ComboBox
-$Global:AutopilotOOBE.GroupTagOptions | ForEach-Object {
+$Global:AutopilotUtilities.GroupTagOptions | ForEach-Object {
     $formMainWindowControlGroupTagComboBox.Items.Add($_) | Out-Null
 }
 
 # Set the ComboBox Default
-if ($Global:AutopilotOOBE.GroupTag) {
+if ($Global:AutopilotUtilities.GroupTag) {
     $formMainWindowControlGroupTagComboBox.Text = (Get-AutopilotRecord).groupTag
 }
 #================================================
@@ -391,13 +410,13 @@ if ($Hidden -contains 'DeploymentGroup') {
 }
 
 # Populate the Control
-$Global:AutopilotOOBE.DeploymentGroupOptions | ForEach-Object {
+$Global:AutopilotUtilities.DeploymentGroupOptions | ForEach-Object {
     $formMainWindowControlDeploymentGroupComboBox.Items.Add($_) | Out-Null
 }
 
 # Set the Default
-if ($Global:AutopilotOOBE.DeploymentGroup) {
-    $formMainWindowControlDeploymentGroupComboBox.Text = $Global:AutopilotOOBE.DeploymentGroup
+if ($Global:AutopilotUtilities.DeploymentGroup) {
+    $formMainWindowControlDeploymentGroupComboBox.Text = $Global:AutopilotUtilities.DeploymentGroup
 }
 #================================================
 #   AssignedComputerName Control
@@ -413,10 +432,10 @@ if ($Hidden -contains 'AssignedComputerName') {
 }
 
 # Populate the Control
-(Get-IntuneWindowsDevice).Name
+
 $formMainWindowControlAssignedComputerNameTextBox.Text = (Get-IntuneWindowsDevice).deviceName
-if ($Global:AutopilotOOBE.AssignedComputerName -gt 0) {
-    $formMainWindowControlAssignedComputerNameTextBox.Text = $Global:AutopilotOOBE.AssignedComputerName
+if ($Global:AutopilotUtilities.AssignedComputerName -gt 0) {
+    $formMainWindowControlAssignedComputerNameTextBox.Text = $Global:AutopilotUtilities.AssignedComputerName
 }
 #================================================
 #   PostAction Control
@@ -447,7 +466,7 @@ $PostActionComboBoxValues | ForEach-Object {
 }
 
 # Set the Default
-switch ($Global:AutopilotOOBE.PostAction) {
+switch ($Global:AutopilotUtilities.PostAction) {
     'Quit'                  {$formMainWindowControlPostActionComboBox.SelectedValue = 'Quit'}
     'Restart'               {$formMainWindowControlPostActionComboBox.SelectedValue = 'Restart Computer'}
     'Shutdown'              {$formMainWindowControlPostActionComboBox.SelectedValue = 'Shutdown Computer'}
@@ -470,23 +489,23 @@ if ($Hidden -contains 'Assign') {
 }
 
 # Set the Default
-if ($Global:AutopilotOOBE.Assign -eq $true) {
+if ($Global:AutopilotUtilities.Assign -eq $true) {
     $formMainWindowControlAssignCheckBox.IsChecked = $true
 }
 #================================================
-#   Register Control
+#   Apply Control
 #================================================
 # Hide the Control
-if ($Hidden -contains 'Register') {
-    $formMainWindowControlRegisterStackPanel.Visibility = 'Collapsed'
+if ($Hidden -contains 'Apply') {
+    $formMainWindowControlApplyStackPanel.Visibility = 'Collapsed'
 
     if ($Global:RegAutoPilot.CloudAssignedForcedEnrollment -eq 1) {
         $CloudAssignedForcedEnrollment = 'Yes'
-        $formMainWindow.Title = "AutopilotOOBE $ModuleVersion : Quit to OOBE"
+        $formMainWindow.Title = "AutopilotUtilities $ModuleVersion : Quit to OOBE"
     }
     else {
         $CloudAssignedForcedEnrollment = 'No'
-        #$formMainWindow.Title = "AutopilotOOBE $ModuleVersion Device Not Registered"
+        #$formMainWindow.Title = "AutopilotUtilities $ModuleVersion Device Not Applyed"
     }
 
     if ($Global:RegAutoPilot.IsDevicePersonalized -eq 1) {
@@ -529,7 +548,7 @@ if ($Hidden -contains 'Register') {
 "@
 }
 else {
-    $formMainWindow.Title = "AutopilotOOBE $ModuleVersion : Register Device"
+    $formMainWindow.Title = "AutopilotUtilities $ModuleVersion : Apply Device"
 }
 #================================================
 #   Run Controls
@@ -571,7 +590,7 @@ $RunComboBoxValues | ForEach-Object {
 }
 
 # Set the ComboBox Default
-switch ($Global:AutopilotOOBE.Run) {
+switch ($Global:AutopilotUtilities.Run) {
     'Restart'                       {$formMainWindowControlRunComboBox.SelectedValue = 'Restart Computer'}
     'Shutdown'                      {$formMainWindowControlRunComboBox.SelectedValue = 'Shutdown Computer'}
     'CommandPrompt'                 {$formMainWindowControlRunComboBox.SelectedValue = 'Command Prompt'}
@@ -601,19 +620,19 @@ $formMainWindowControlRunButton.add_Click( {
         'Command Prompt'                    {Start-Process Cmd.exe}
         'PowerShell'                        {Start-Process PowerShell.exe -ArgumentList "-Nologo"}
         'PowerShell ISE'                    {Start-Process PowerShell_ISE.exe}
-        'Open Event Viewer'                 {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -Window Minimized',"-Command Invoke-AutopilotOOBEcmd EventViewer"}
+        'Open Event Viewer'                 {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -Window Minimized',"-Command Invoke-AutopilotUtilitiescmd EventViewer"}
         'Open Windows Explorer'             {Start-Process Explorer.exe}
         'Show Network and Wireless Settings'{Start-Process ms-availablenetworks:}
-        'Show Windows Security'             {Start-Process PowerShell.exe -ArgumentList "Add-AppxPackage -Register -DisableDevelopmentMode 'C:\Windows\SystemApps\Microsoft.Windows.SecHealthUI_cw5n1h2txyewy\AppXManifest.xml';start windowsdefender:"}
+        'Show Windows Security'             {Start-Process PowerShell.exe -ArgumentList "Add-AppxPackage -Apply -DisableDevelopmentMode 'C:\Windows\SystemApps\Microsoft.Windows.SecHealthUI_cw5n1h2txyewy\AppXManifest.xml';start windowsdefender:"}
         'Show Windows Settings'             {Start-Process ms-settings:}
-        'AutopilotDiagnostics'              {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotOOBEcmd AutopilotDiagnostics"}
-        'AutopilotDiagnostics Online'       {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotOOBEcmd AutopilotDiagnosticsOnline"}
+        'AutopilotDiagnostics'              {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotUtilitiescmd AutopilotDiagnostics"}
+        'AutopilotDiagnostics Online'       {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotUtilitiescmd AutopilotDiagnosticsOnline"}
         'MDMDiagnosticsTool -out C:\Temp'                                       {Start-Process MDMDiagnosticsTool.exe -ArgumentList "-out C:\Temp"}
         'MDMDiagnosticsTool -area Autopilot -cab C:\Temp\Autopilot.cab'         {Start-Process MDMDiagnosticsTool.exe -ArgumentList "-area Autopilot","-cab C:\Temp\Autopilot.cab"}
         'MDMDiagnosticsTool -area Autopilot;TPM -cab C:\Temp\AutopilotTPM.cab'  {Start-Process MDMDiagnosticsTool.exe -ArgumentList "-area Autopilot;TPM","-cab C:\Temp\AutopilotTPM.cab"}
-        'TPM Get'                           {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotOOBEcmd GetTpm"}
-        'TPM Clear'                         {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotOOBEcmd ClearTpm"}
-        'TPM Initialize'                    {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotOOBEcmd InitializeTpm"}
+        'TPM Get'                           {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotUtilitiescmd GetTpm"}
+        'TPM Clear'                         {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotUtilitiescmd ClearTpm"}
+        'TPM Initialize'                    {Start-Process -FilePath PowerShell.exe -ArgumentList '-NoLogo -NoExit',"-Command Invoke-AutopilotUtilitiescmd InitializeTpm"}
         'Sysprep /oobe /quit'               {Start-Process "$env:SystemRoot\System32\Sysprep\Sysprep.exe" -ArgumentList "/oobe", "/quit"}
         'Sysprep /oobe /reboot'             {Start-Process "$env:SystemRoot\System32\Sysprep\Sysprep.exe" -ArgumentList "/oobe", "/reboot"}
         'Sysprep /oobe /shutdown'           {Start-Process "$env:SystemRoot\System32\Sysprep\Sysprep.exe" -ArgumentList "/oobe", "/shutdown"}
@@ -633,7 +652,7 @@ $formMainWindowControlDocsComboBox.Items.Add('Windows Autopilot Overview') | Out
 $formMainWindowControlDocsComboBox.Items.Add('Windows Autopilot User-Driven Mode') | Out-Null
 $formMainWindowControlDocsComboBox.Items.Add('Windows Autopilot for Pre-Provisioned Deployment') | Out-Null
 $formMainWindowControlDocsComboBox.Items.Add('Windows Autopilot Deployment for Existing Devices') | Out-Null
-$formMainWindowControlDocsComboBox.Items.Add('Manually register devices with Windows Autopilot') | Out-Null
+$formMainWindowControlDocsComboBox.Items.Add('Manually Apply devices with Windows Autopilot') | Out-Null
 $formMainWindowControlDocsComboBox.Items.Add('Windows Autopilot Troubleshooting Overview') | Out-Null
 $formMainWindowControlDocsComboBox.Items.Add('Troubleshoot Autopilot Device Import and Enrollment') | Out-Null
 $formMainWindowControlDocsComboBox.Items.Add('Troubleshoot Autopilot OOBE Issues') | Out-Null
@@ -644,16 +663,16 @@ $formMainWindowControlDocsComboBox.Items.Add('Sysprep Overview') | Out-Null
 $formMainWindowControlDocsComboBox.Items.Add('Sysprep Audit Mode Overview') | Out-Null
 $formMainWindowControlDocsComboBox.Items.Add('Sysprep Command-Line Options') | Out-Null
 
-if ($Hidden -contains 'Register') {
+if ($Hidden -contains 'Apply') {
     $formMainWindowControlDocsComboBox.SelectedValue = 'Troubleshoot Autopilot OOBE Issues'
 }
 else {
     $formMainWindowControlDocsComboBox.SelectedValue = 'Windows Autopilot Documentation'
 }
 
-if ($Global:AutopilotOOBE.Docs) {
-    $formMainWindowControlDocsComboBox.Items.Add($Global:AutopilotOOBE.Docs) | Out-Null
-    $formMainWindowControlDocsComboBox.SelectedValue = $Global:AutopilotOOBE.Docs
+if ($Global:AutopilotUtilities.Docs) {
+    $formMainWindowControlDocsComboBox.Items.Add($Global:AutopilotUtilities.Docs) | Out-Null
+    $formMainWindowControlDocsComboBox.SelectedValue = $Global:AutopilotUtilities.Docs
 }
 
 $formMainWindowControlDocsButton.add_Click( {
@@ -664,7 +683,7 @@ $formMainWindowControlDocsButton.add_Click( {
     elseif ($formMainWindowControlDocsComboBox.SelectedValue -eq 'Windows Autopilot User-Driven Mode') {Start-Process 'https://docs.microsoft.com/en-us/mem/autopilot/user-driven'}
     elseif ($formMainWindowControlDocsComboBox.SelectedValue -eq 'Windows Autopilot for Pre-Provisioned Deployment') {Start-Process 'https://docs.microsoft.com/en-us/mem/autopilot/pre-provision'}
     elseif ($formMainWindowControlDocsComboBox.SelectedValue -eq 'Windows Autopilot Deployment for Existing Devices') {Start-Process 'https://docs.microsoft.com/en-us/mem/autopilot/existing-devices'}
-    elseif ($formMainWindowControlDocsComboBox.SelectedValue -eq 'Manually register devices with Windows Autopilot') {Start-Process 'https://docs.microsoft.com/en-us/mem/autopilot/add-devices'}
+    elseif ($formMainWindowControlDocsComboBox.SelectedValue -eq 'Manually Apply devices with Windows Autopilot') {Start-Process 'https://docs.microsoft.com/en-us/mem/autopilot/add-devices'}
     elseif ($formMainWindowControlDocsComboBox.SelectedValue -eq 'Windows Autopilot Troubleshooting Overview') {Start-Process 'https://docs.microsoft.com/en-us/mem/autopilot/troubleshooting'}
     elseif ($formMainWindowControlDocsComboBox.SelectedValue -eq 'Troubleshoot Autopilot Device Import and Enrollment') {Start-Process 'https://docs.microsoft.com/en-us/mem/autopilot/troubleshoot-device-enrollment'}
     elseif ($formMainWindowControlDocsComboBox.SelectedValue -eq 'Troubleshoot Autopilot OOBE Issues') {Start-Process 'https://docs.microsoft.com/en-us/mem/autopilot/troubleshoot-oobe'}
@@ -710,11 +729,11 @@ $formMainWindowControlApplyButton.add_Click( {
         $Params.GroupTag = $formMainWindowControlGroupTagComboBox.Text
     }
 
-    if (($formMainWindowControlAssignedComputerNameTextBox.Text -gt 0) -and ($formMainWindowControlAssignedComputerNameTextBox.Text -notmatch $Global:AutopilotOOBE.AssignedComputerNameExample)) {
+    if (($formMainWindowControlAssignedComputerNameTextBox.Text -gt 0) -and ($formMainWindowControlAssignedComputerNameTextBox.Text -notmatch $Global:AutopilotUtilities.AssignedComputerNameExample)) {
         $Params.AssignedComputerName = $formMainWindowControlAssignedComputerNameTextBox.Text
     }
 
-    $Transcript = "$((Get-Date).ToString('yyyy-MM-dd-HHmmss'))-AutopilotOOBE.log"
+    $Transcript = "$((Get-Date).ToString('yyyy-MM-dd-HHmmss'))-AutopilotUtilities.log"
     Start-Transcript -Path (Join-Path "$env:SystemRoot\Temp" $Transcript) -ErrorAction Ignore
 
     Write-Host -ForegroundColor Cyan "Install-Script Get-WindowsAutoPilotInfo"
@@ -725,9 +744,9 @@ $formMainWindowControlApplyButton.add_Click( {
     Write-Host -ForegroundColor Cyan "Get-WindowsAutoPilotInfo @Params"
 
     Start-Sleep -Seconds 3
-    $formMainWindow.Title = "AutopilotOOBE $ModuleVersion : Registering Device"
+    $formMainWindow.Title = "AutopilotUtilities $ModuleVersion : Applying Device"
     Get-WindowsAutoPilotInfo @Params
-    $formMainWindow.Title = "AutopilotOOBE $ModuleVersion : Restart Device"
+    $formMainWindow.Title = "AutopilotUtilities $ModuleVersion : Restart Device"
 
     if ((Get-Process -Name powershell).MainWindowTitle -match 'Running') {
         Write-Warning "Waiting for Start-OOBEDeploy to finish"

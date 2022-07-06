@@ -6,11 +6,7 @@ function Test-MSGraph {
         }
     }
 
-    Try {
-        Invoke-MSGraphRequest -URL "https://graph.microsoft.com/v1.0/me" -ErrorAction Throw
-    }
-    Catch {
-        Write-Host "MS Graph not Authenticated"
-        Connect-MSGraph | Out-Null
-    }
+    try {Invoke-MSGraphRequest -URL "https://graph.microsoft.com/v1.0/organization"}
+    catch {Connect-MSGraph | Out-Null}
+
 }

@@ -179,12 +179,9 @@ function Start-AutopilotUtilities {
             Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Set-PSRepository -Name PSGallery -InstallationPolicy Trusted"
             Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -Force
         }
-        Install-Module Microsoft.Graph.Intune -Force
+        Test-MSGraph
         Install-Module AutopilotOOBE -Force
-        Install-Module WindowsAutopilotIntune -Force
-        Import-Module Microsoft.Graph.Intune -Force
         Import-Module AutopilotOOBE -Force
-        Import-Module WindowsAutopilotIntune
  
 <#        #================================================
         #   Test-AutopilotRecord

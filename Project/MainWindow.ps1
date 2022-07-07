@@ -416,7 +416,7 @@ $Global:AutopilotUtilities.DeploymentGroupOptions | ForEach-Object {
 
 # Set the Default
 if ($Global:AutopilotUtilities.DeploymentGroup) {
-    $formMainWindowControlDeploymentGroupComboBox.Text = $Global:AutopilotUtilities.DeploymentGroup
+    $formMainWindowControlDeploymentGroupComboBox.Text = (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $CurrentGroupMembership -IncludeEqual -ExcludeDifferent).InputObject
 }
 #================================================
 #   RemoveFromGroups Control

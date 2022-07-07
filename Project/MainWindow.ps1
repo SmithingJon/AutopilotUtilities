@@ -264,7 +264,7 @@ function Show-PowershellWindow() {
 #================================================
 #   Intune/Autopilot/Azure Sidebar/Logic
 #================================================
-if (Test-AutopilotUtilitiesconnection) {
+if (Test-AutopilotOOBEconnection) {
     $formMainWindowControlOnlineStatusLabel.Background = 'Green'
 }
 else {
@@ -319,7 +319,7 @@ if (Test-IntuneEnrollment) {
 }
 else {
     $formMainWindowControlIntuneStatusLabel.Content = "Intune not Enrolled"
-    $formMainWindowControlntuneStatusLabel.Background = "Orange"
+    $formMainWindowControlntuneStatusLabel.Background = "Yellow"
     $formMainWindowControlDeleteIntuneCheckbox.IsEnabled = $false
     $formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $true
 }
@@ -338,7 +338,7 @@ if (Test-AutopilotRecord) {
 }
 else {
     $formMainWindowControlAutopilotStatusLabel.Content = "Autopilot not Enrolled"
-    $formMainWindowControlAutopilotStatusLabel.Background = "Orange"
+    $formMainWindowControlAutopilotStatusLabel.Background = "Yellow"
     $formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $false
 }
 #================================================
@@ -393,8 +393,8 @@ $Global:AutopilotUtilities.GroupTagOptions | ForEach-Object {
 }
 
 # Set the ComboBox Default
-if ($Global:AutopilotUtilities.GroupTag) {
-    $formMainWindowControlGroupTagComboBox.Text = (Get-AutopilotRecord).groupTag
+if ((Get-AutopilotRecord).groupTag) {
+     $formMainWindowControlGroupTagComboBox.Text = (Get-AutopilotRecord).groupTag
 }
 #================================================
 #   DeploymentGroup Control

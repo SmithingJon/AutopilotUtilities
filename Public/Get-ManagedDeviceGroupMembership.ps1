@@ -48,8 +48,9 @@ function Get-ManagedDeviceGroupMembership{
         $URL = "https://graph.microsoft.com/v1.0/devices?`$filter=displayName eq '$DeviceName'&`$select=id"
     }
     If ($DeviceSerial)
-    {
-        $SerialURL = "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?`$filter=serialNumber eq '$DeviceSerial'&`$select=azureADDeviceId"
+    {   
+        $encoded = [uri]::EscapeDataString($DeviceSerial)
+        $SerialURL = "https://graph.microsoft.com/beta/deviceManagement/windowsAutopilotDeviceIdentities?`$filter=contains(serialNumber,'$encoded')"
         $headers = @{'Authorization'="Bearer " + $GraphToken}
         $D_Response = Invoke-WebRequest -Uri $SerialURL -Method GET -Headers $Headers -UseBasicParsing
         $test = ($D_Response.Content | ConvertFrom-Json).Value.azureADDeviceId

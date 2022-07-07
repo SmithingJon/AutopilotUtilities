@@ -28,7 +28,7 @@ function Update-WindowsAutpilotInfo {
         $Online,
         [Paramter()]
         [string]
-        $AddToGroup,
+        $DeploymentGroup,
         [Paramter()]
         [string]
         $RemoveFromGroup,
@@ -54,7 +54,7 @@ function Update-WindowsAutpilotInfo {
         }
     }
     #endregion
-    #region Remove from Groups
+    #region Remove from all Deployment Groups except current Deployment Group
         
         Invoke-MSGraphRequest -Url "https://graph.microsoft.com/v1.0/groups/$($GroupId)/members/$($ObjectID)/$ref" -HttpMethod DELETE
         if ($ProfileWait) {

@@ -344,7 +344,7 @@ else {
 #================================================
 #   Groups/Enrollment Sidebar
 #================================================
-$CurrentGroupMembership = (Get-ManagedDeviceGroupMembership -deviceSerial $SerialNumber).Name
+$CurrentGroupMembership = (Get-ManagedDeviceGroupMembership -deviceSerial $SerialNumber | Where-Object 'Membership Type' -Contains 'Assigned').Name
 $CurrentGroupMembership | ForEach-Object {
     $formMainWindowControlGroupsListView.Items.Add($_) | Out-Null
 }
@@ -418,6 +418,22 @@ $Global:AutopilotUtilities.DeploymentGroupOptions | ForEach-Object {
 if ($Global:AutopilotUtilities.DeploymentGroup) {
     $formMainWindowControlDeploymentGroupComboBox.Text = $Global:AutopilotUtilities.DeploymentGroup
 }
+#================================================
+#   RemoveFromGroups Control
+#================================================
+# Disable the Control
+if ($Disabled -contains 'RemoveFromGroups') {
+    $formMainWindowControlRemoveFromAllRadioButton.IsEnabled = $false
+    $formMainWindowControlOnlyChangeDeploymentGroupRadioButton.IsEnabled = $false
+}
+# Hide the Control
+if ($Hidden -contains 'RemoveFromGroups') {
+    $formMainWindowControlOnlyChangeDeploymentGroupRadioButton.IsHidden = $True
+    $formMainWindowControlRemoveFromAllRadioButton.IsHidden = $True
+}
+# Set the Default
+$formMainWindowControlOnlyChangeDeploymentGroupRadioButton.IsChecked = $True
+
 #================================================
 #   AssignedComputerName Control
 #================================================
@@ -722,8 +738,23 @@ $formMainWindowControlApplyButton.add_Click( {
     }
 
     if ($formMainWindowControlDeploymentGroupComboBox.Text -gt 0) {
-        $Params.DeploymentGroup = $formMainWindowControlDeploymentGroupComboBox.Text
+        $NewDeploymentGroup = $formMainWindowControlDeploymentGroupComboBox.Text
     }
+    #Region RemoveFromGroups Logic
+
+    if ($formMainWindowControlOnlyChangeDeploymentGroupRadioButton.IsChecked) {
+        $RemovalGroups = $DeploymentGroupOptions - $NewDeploymentGroup
+        if (!($CurrentGroupMembership -contains $NewDeploymentGroup) ){
+            $Params.DeploymentGroup = $formMainWindowControlDeploymentGroupComboBox.Text
+        }
+    }
+    else {
+        $RemovalGroups = $CurrentGroupMembership - $NewDeploymentGroup
+    }
+
+    $Params.RemovalGroups = $RemovalGroups
+
+    #endregion
 
     if ($formMainWindowControlGroupTagComboBox.Text -gt 0) {
         $Params.GroupTag = $formMainWindowControlGroupTagComboBox.Text

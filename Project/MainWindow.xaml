@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:AutopilotOOBE"
+        xmlns:local="clr-namespace:AutopilotUtilities"
         mc:Ignorable="d"
         BorderThickness="0"
         RenderTransformOrigin="0.5,0.5"
@@ -342,8 +342,26 @@
                 />
 
             </StackPanel>
-
-
+            <StackPanel x:Name = "RemoveFromGroupsStackPanel" Orientation = "Horizontal" HorizontalAlignment = "Right" VerticalAlignment = "Center" Margin = "7">
+                <RadioButton
+                Name = "RemoveFromAllRadioButton"
+                BorderThickness = "2"
+                FontFamily = "Segoe UI"
+                FontSize = "15"
+                Foreground = "Black"
+                Margin="5,0,0,0"
+                Content="Remove from other static groups"
+                />
+                <RadioButton
+                Name = "OnlyChangeDeploymentGroupRadioButton"
+                BorderThickness = "2"
+                FontFamily = "Segoe UI"
+                FontSize = "15"
+                Foreground = "Black"
+                Margin="5,0,0,0"
+                Content="Only change deployment group"
+                />
+            </StackPanel>
             <StackPanel x:Name = "AssignedComputerNameStackPanel" Orientation = "Horizontal" HorizontalAlignment = "Right" VerticalAlignment = "Center" Margin = "7">
                 <Label Name = "AssignedComputerNameLabel"
                 Content = "AssignedComputerName:"

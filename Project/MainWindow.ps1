@@ -305,7 +305,7 @@ $formMainWindowControlSerialNumberLabel.Content = $SerialNumber
 $BiosVersion = ((Get-CimInstance -ClassName Win32_BIOS).SMBIOSBIOSVersion).Trim()
 $formMainWindowControlBiosVersionLabel.Content = "BIOS $BiosVersion"
 
-if (Test-IntuneEnrollment $True) {
+if (Test-IntuneEnrollment) {
     $formMainWindowControlIntuneStatusLabel.Content = "Intune Enrolled"
     $formMainWindowControlIntuneStatusLabel.Background = "Green"
     $formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $false

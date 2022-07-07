@@ -305,7 +305,7 @@ $formMainWindowControlSerialNumberLabel.Content = $SerialNumber
 $BiosVersion = ((Get-CimInstance -ClassName Win32_BIOS).SMBIOSBIOSVersion).Trim()
 $formMainWindowControlBiosVersionLabel.Content = "BIOS $BiosVersion"
 
-if (Test-IntuneEnrollment) {
+if (Test-IntuneEnrollment $True) {
     $formMainWindowControlIntuneStatusLabel.Content = "Intune Enrolled"
     $formMainWindowControlIntuneStatusLabel.Background = "Green"
     $formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $false
@@ -319,7 +319,8 @@ if (Test-IntuneEnrollment) {
 }
 else {
     $formMainWindowControlIntuneStatusLabel.Content = "Intune not Enrolled"
-    $formMainWindowControlntuneStatusLabel.Background = "Yellow"
+    $formMainWindowControlIntuneStatusLabel.Background = "Orange"
+    $formMainWindowControlIntuneStatusLabel.Foreground = "Black"
     $formMainWindowControlDeleteIntuneCheckbox.IsEnabled = $false
     $formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $true
 }
@@ -338,7 +339,8 @@ if (Test-AutopilotRecord) {
 }
 else {
     $formMainWindowControlAutopilotStatusLabel.Content = "Autopilot not Enrolled"
-    $formMainWindowControlAutopilotStatusLabel.Background = "Yellow"
+    $formMainWindowControlAutopilotStatusLabel.Background = "Orange"
+    $formMainWindowControlAutopilotStatusLabel.Foreground = "Black"
     $formMainWindowControlDeleteAutoPilotCheckbox.IsEnabled = $false
 }
 #================================================
@@ -449,7 +451,7 @@ if ($Hidden -contains 'AssignedComputerName') {
 
 # Populate the Control
 
-$formMainWindowControlAssignedComputerNameTextBox.Text = (Get-IntuneWindowsDevice).deviceName
+$formMainWindowControlAssignedComputerNameTextBox.Text = (Get-AutopilotRecord).displayName
 if ($Global:AutopilotUtilities.AssignedComputerName -gt 0) {
     $formMainWindowControlAssignedComputerNameTextBox.Text = $Global:AutopilotUtilities.AssignedComputerName
 }

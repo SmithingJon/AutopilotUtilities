@@ -1,6 +1,8 @@
 function Test-MSGraph {
     [CmdletBinding()]
     param (
+        [switch]
+        $output
     )
     if (!(Get-Module Microsoft.Graph.Intune)) {
         if (Import-Module Microsoft.Graph.Intune){
@@ -18,5 +20,7 @@ function Test-MSGraph {
     }
     catch {Write-Verbose "Connecting to MSGraph"
         Connect-MSGraph | Out-Null}
-    $Organization
+    if ($output) {
+        $Organization
+    }
 }

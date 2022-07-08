@@ -43,7 +43,8 @@ function Update-WindowsAutopilotInfo {
         [switch]
         $Reboot
     )
-    $id = (Test-MSGraph).id
+    Test-MSGraph
+    $id = (Test-MSGraph -output).id
     Connect-AzureAD -TenantId $id
     #region If $assign, Check if device has an Autopilot Deployment Profile.
     if ($Assign) {

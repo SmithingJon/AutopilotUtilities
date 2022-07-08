@@ -183,7 +183,6 @@ function Start-AutopilotUtilities {
         #   Dependency Check
         #================================================
         Write-Host -ForegroundColor DarkGray "Dependency Check"
-        Test-MSGraph
         # Invoke-LoadModule Function by NEWBIEDEV
         function Invoke-LoadModule {
             [CmdletBinding()]
@@ -219,6 +218,9 @@ function Start-AutopilotUtilities {
             }
         }
         Invoke-LoadModule AutopilotOOBE
+        Invoke-LoadModule AzureAD
+        Invoke-LoadModule Microsoft.Graph.Intune
+        Test-MSGraph
 <#        #================================================
         #   Test-AutopilotRecord
         #================================================

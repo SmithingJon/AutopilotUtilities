@@ -33,7 +33,7 @@ function Update-WindowsAutpilotInfo {
         [string]
         $RemovalGroups,
         [Parameter()]
-        [ValidateLength(1,15)]
+        [ValidateLength(0,15)]
         [string]
         $AssignedComputerName,
         [Parameter()]

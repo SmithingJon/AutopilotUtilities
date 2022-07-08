@@ -18,5 +18,5 @@ function Test-MSGraph {
     }
     catch {Write-Verbose "Connecting to MSGraph"
         Connect-MSGraph | Out-Null}
-
+    $Organization
 }

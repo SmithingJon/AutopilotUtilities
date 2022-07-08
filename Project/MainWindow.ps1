@@ -130,7 +130,7 @@ $xp = '[^a-zA-Z_0-9]' # All characters that are not a-Z, 0-9, or _
 foreach($x in $vx)
 {
     $xaml = (Get-Variable -Name "xaml$($x)").Value #load the xaml we created earlier
-    $xaml.SelectNodes("//*[@Name]") | %{ #find all nodes with a "Name" attribute
+    $xaml.SelectNodes("//*[@Name]") | ForEach-Object{ #find all nodes with a "Name" attribute
         $cname = "form$($x)Control$(($_.Name -replace $xp, '_'))"
         Set-Variable -Name "$cname" -Value $SyncClass.SyncHash."form$($x)".FindName($_.Name) #create a variale to hold the control/object
         $controls += (Get-Variable -Name "form$($x)Control$($_.Name)").Name #add the control name to our array
@@ -141,11 +141,11 @@ foreach($x in $vx)
 ## FORMS AND CONTROLS OUTPUT
 ############################
 Write-Host -ForegroundColor Cyan "The following forms were created:"
-$forms | %{ Write-Host -ForegroundColor Yellow "  `$$_"} #output all forms to screen
+$forms | ForEach-Object { Write-Host -ForegroundColor Yellow "  `$$_"} #output all forms to screen
 if($controls.Count -gt 0){
     Write-Host ""
     Write-Host -ForegroundColor Cyan "The following controls were created:"
-    $controls | %{ Write-Host -ForegroundColor Yellow "  `$$_"} #output all named controls to screen
+    $controls | ForEach-Object{ Write-Host -ForegroundColor Yellow "  `$$_"} #output all named controls to screen
 }
 #######################
 ## DISABLE A/V AUTOPLAY
@@ -203,9 +203,9 @@ $jobCleanup.PowerShell = [PowerShell]::Create().AddScript({
         }
         #Clean out unused runspace jobs
         $temphash = $jobs.clone()
-        $temphash | Where {
+        $temphash | Where-Object {
             $_.runspace -eq $Null
-        } | ForEach {
+        } | ForEach-Object {
             $jobs.remove($_)
         }        
         Start-Sleep -Seconds 1 #lets not kill the processor here 
@@ -332,7 +332,7 @@ if (Test-AutopilotRecord) {
     # Add Click
     $formMainWindowControlDeleteAutopilotCheckbox.add_Click( {
         switch ($formMainWindowControlDeleteAutopilotCheckbox.IsChecked) {
-        $true   {$formMainWindowControlDeleteAzureCheckbox.IsEnabled = $true }
+        $true   {$formMainWindowControlDeleteAzureCheckbox.IsEnabled = $true ; $formMainWindowControlDeleteAzureCheckbox.isChecked = $true}
         $false  {$formMainWindowControlDeleteAzureCheckbox.IsEnabled = $false ; $formMainWindowControlDeleteAzureCheckbox.IsChecked = $false }
         }
     })
@@ -354,7 +354,7 @@ $CurrentGroupMembership | ForEach-Object {
 #================================================
 #   Parameters
 #================================================
-$AutopilotUtilitiesParams = (Get-Command Start-AutopilotUtilities).Parameters
+# $AutopilotUtilitiesParams = (Get-Command Start-AutopilotUtilities).Parameters
 #================================================
 #   Heading
 #================================================
@@ -452,9 +452,9 @@ if ($Hidden -contains 'AssignedComputerName') {
 # Populate the Control
 
 $formMainWindowControlAssignedComputerNameTextBox.Text = (Get-AutopilotRecord).displayName
-if ($Global:AutopilotUtilities.AssignedComputerName -gt 0) {
+<# if ($Global:AutopilotUtilities.AssignedComputerName -gt 0) {
     $formMainWindowControlAssignedComputerNameTextBox.Text = $Global:AutopilotUtilities.AssignedComputerName
-}
+} #>
 #================================================
 #   PostAction Control
 #================================================
@@ -723,16 +723,31 @@ $formMainWindowControlDocsButton.add_Click( {
 #================================================
 #   ApplyButton
 #================================================
-if ($env:UserName -ne 'defaultuser0') {
+<# if ($env:UserName -ne 'defaultuser0') {
     $formMainWindowControlApplyButton.IsEnabled = $false
-}
+} #>
 
 $formMainWindowControlApplyButton.add_Click( {
     $formMainWindow.Close()
     Show-PowershellWindow
-
+    Test-MSGraph -Verbose
     $Params = @{
         Online = $true
+    }
+
+    if ($formMainWindowControlDeleteIntuneCheckbox.IsChecked) {
+        Remove-IntuneManagedDevice -managedDeviceId $(Get-IntuneWIndowsDevice.id)
+    }
+
+    if ($formMainWindowControlDeleteAutoPilotCheckbox.isChecked) {
+        $AzureAdDeviceId = (Get-AutopilotRecord -serialNumber $SerialNumber).azureAdDeviceId
+        Remove-AutopilotDevice -serialNumber $SerialNumber
+    }
+
+    if ($formMainWindowControlDeleteAzureCheckbox.IsChecked) {
+        if (!(Get-AutopilotRecord)) {
+            Remove-AzureADDevice -ObjectId $AzureAdDeviceId
+        }
     }
 
     if ($formMainWindowControlAssignCheckbox.IsChecked) {
@@ -741,29 +756,58 @@ $formMainWindowControlApplyButton.add_Click( {
 
     if ($formMainWindowControlDeploymentGroupComboBox.Text -gt 0) {
         $NewDeploymentGroup = $formMainWindowControlDeploymentGroupComboBox.Text
+        Write-Host -ForegroundColor Cyan "Assignment Group: $NewDeploymentGroup."
     }
     #Region RemoveFromGroups Logic
 
-    if ($formMainWindowControlOnlyChangeDeploymentGroupRadioButton.IsChecked) {
-        $RemovalGroups = $DeploymentGroupOptions - $NewDeploymentGroup
-        if (!($CurrentGroupMembership -contains $NewDeploymentGroup) ){
-            $Params.DeploymentGroup = $formMainWindowControlDeploymentGroupComboBox.Text
+    if (!($formMainWindowControlDeploymentGroupComboBox.Text)) {
+        if (($formMainWindowControlRemoveFromAllRadioButton.IsChecked)) {
+            # Since We don't have any text in the New group, we are going to remove from all deployment groups.
+            $RemovalGroups = $CurrentGroupMembership
+            Write-Host -ForegroundColor Cyan "Device will be removed from groups $RemovalGroups"
+        }
+        else {
+            $RemovalGroups = (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $NewDeploymentGroup | Where-Object SideIndicator -match '<=').InputObject
+            Write-Host -ForegroundColor Cyan "Device will be removed from groups $RemovalGroups"        
+        }
+    }    
+    else {
+        # We now want to make sure we keep the device in the deployment group if the deployment group hasn't changed.
+        # If 
+        if (($formMainWindowControlRemoveFromAllRadioButton.IsChecked)) {
+            # We are going to remove the device from all groups except the NewDeploymentGroup.
+            #$SaveGroups = (Compare-Object -ReferenceObject $CurrentGroupMembership -DifferenceObject $NewDeploymentGroup -ExcludeDifferent -IncludeEqual).InputObject
+            $RemovalGroups = (Compare-Object -ReferenceObject $CurrentGroupMembership -DifferenceObject $NewDeploymentGroup | Where-Object SideIndicator -match '<=').InputObject
+        }
+        else {
+            $RemovalGroups = (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $NewDeploymentGroup | Where-Object SideIndicator -match '<=').InputObject
+        }
+        if ($RemovalGroups){
+            $Params.RemovalGroups = $RemovalGroups
+            Write-Host -ForegroundColor Cyan "Device will be rmoved from groups $RemovalGroups."
         }
     }
-    else {
-        $RemovalGroups = $CurrentGroupMembership - $NewDeploymentGroup
-    }
-
-    $Params.RemovalGroups = $RemovalGroups
-
     #endregion
+
 
     if ($formMainWindowControlGroupTagComboBox.Text -gt 0) {
         $Params.GroupTag = $formMainWindowControlGroupTagComboBox.Text
+        Write-Host -ForegroundColor Cyan "Setting GroupTag to $($formMainWindowControlGroupTagComboBox.Text)"
+    }
+    else {
+        $Params.GroupTag = ""
     }
 
-    if (($formMainWindowControlAssignedComputerNameTextBox.Text -gt 0) -and ($formMainWindowControlAssignedComputerNameTextBox.Text -notmatch $Global:AutopilotUtilities.AssignedComputerNameExample)) {
+    if (($formMainWindowControlAssignedComputerNameTextBox.Text -gt 0) -and ($formMainWindowControlAssignedComputerNameTextBox.Text -notmatch ((Get-AutopilotRecord).displayName))) {
         $Params.AssignedComputerName = $formMainWindowControlAssignedComputerNameTextBox.Text
+        Write-Host -ForegroundColor Cyan "Changing Computer Name to $($formMainWindowControlAssignedComputerNameTextBox.Text)"
+    }
+    elseif (($formMainWindowControlAssignedComputerNameTextBox.Text -gt 0) -and ($formMainWindowControlAssignedComputerNameTextBox.Text -match ((Get-AutopilotRecord).displayName) )) {
+        Write-Host -ForegroundColor Cyan "Current Name matches Desired name. No Change."
+    } 
+    else {
+        Write-Host -ForegroundColor Cyan "Removing Computer Name from Autopilot"
+        $Params.AssignedComputerName = ""
     }
 
     $Transcript = "$((Get-Date).ToString('yyyy-MM-dd-HHmmss'))-AutopilotUtilities.log"
@@ -774,7 +818,11 @@ $formMainWindowControlApplyButton.add_Click( {
     Install-Script Get-WindowsAutoPilotInfo -Force -Verbose
 
     Write-Host ($Params | Out-String)
-    Write-Host -ForegroundColor Cyan "Get-WindowsAutoPilotInfo @Params"
+    Write-Host -ForegroundColor Cyan "Update-WindowsAutoPilotInfo @Params"
+
+    #===================================
+       Pause # for debugging #>
+    #===================================
 
     Start-Sleep -Seconds 3
     $formMainWindow.Title = "AutopilotUtilities $ModuleVersion : Applying Device"

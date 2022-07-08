@@ -350,7 +350,7 @@
                 FontSize = "15"
                 Foreground = "Black"
                 Margin="5,0,0,0"
-                Content="Remove from other static groups"
+                Content="Clean Groups"
                 />
                 <RadioButton
                 Name = "OnlyChangeDeploymentGroupRadioButton"
@@ -359,7 +359,8 @@
                 FontSize = "15"
                 Foreground = "Black"
                 Margin="5,0,0,0"
-                Content="Only change deployment group"
+                Content="Only change Deployment Group"
+                IsChecked="True"
                 />
             </StackPanel>
             <StackPanel x:Name = "AssignedComputerNameStackPanel" Orientation = "Horizontal" HorizontalAlignment = "Right" VerticalAlignment = "Center" Margin = "7">

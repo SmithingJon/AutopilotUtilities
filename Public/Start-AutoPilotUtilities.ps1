@@ -177,12 +177,48 @@ function Start-AutopilotUtilities {
         if ($PSGalleryIP -eq 'Untrusted') {
             Write-Host -ForegroundColor DarkGray "========================================================================="
             Write-Host -ForegroundColor Cyan "$((Get-Date).ToString('yyyy-MM-dd-HHmmss')) Set-PSRepository -Name PSGallery -InstallationPolicy Trusted"
-            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -Force
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
         }
+        #================================================
+        #   Dependency Check
+        #================================================
+        Write-Host -ForegroundColor DarkGray "Dependency Check"
         Test-MSGraph
-        Install-Module AutopilotOOBE -Force
-        Import-Module AutopilotOOBE -Force
- 
+        # Invoke-LoadModule Function by NEWBIEDEV
+        function Invoke-LoadModule {
+            [CmdletBinding()]
+            param (
+                [Parameter()]
+                [string]
+                $m
+            )
+            # If module is imported say that and do nothing
+            if (Get-Module | Where-Object {$_.Name -eq $m}) {
+                write-host "Module $m is already imported."
+            }
+            else {
+        
+                # If module is not imported, but available on disk then import
+                if (Get-Module -ListAvailable | Where-Object {$_.Name -eq $m}) {
+                    Import-Module $m -Verbose
+                }
+                else {
+        
+                    # If module is not imported, not available on disk, but is in online gallery then install and import
+                    if (Find-Module -Name $m | Where-Object {$_.Name -eq $m}) {
+                        Install-Module -Name $m -Force -Verbose -Scope CurrentUser
+                        Import-Module $m -Verbose
+                    }
+                    else {
+        
+                        # If module is not imported, not available and not in online gallery then abort
+                        write-host "Module $m not imported, not available and not in online gallery, exiting."
+                        EXIT 1
+                    }
+                }
+            }
+        }
+        Invoke-LoadModule AutopilotOOBE
 <#        #================================================
         #   Test-AutopilotRecord
         #================================================

@@ -14,7 +14,7 @@ An example
 .NOTES
 Requres Microsoft.Graph.Intune module.
 #>
-function Update-WindowsAutpilotInfo {
+function Update-WindowsAutopilotInfo {
     [CmdletBinding()]
     param (
         [Parameter()]
@@ -26,10 +26,10 @@ function Update-WindowsAutpilotInfo {
         [Parameter()]
         [switch]
         $Online,
-        [Paramter()]
+        [Parameter()]
         [string]
         $DeploymentGroup,
-        [Paramter()]
+        [Parameter()]
         [string]
         $RemovalGroups,
         [Parameter()]

@@ -45,7 +45,9 @@ function Update-WindowsAutopilotInfo {
     )
     Test-MSGraph
     $id = (Test-MSGraph -output).id
-    Connect-AzureAD -TenantId $id
+    Write-Verbose "Connecting to AzureAD"
+    Connect-AzureAD -TenantId $id | Out-Null
+    $serialnumber = (Get-WmiObject -Class "WIN32_BIOS" -Property serialNumber).serialNumber
     #region If $assign, Check if device has an Autopilot Deployment Profile.
     if ($Assign) {
         $AssignmentStatus = (Get-AutopilotRecord).deploymentProfileAssignmentStatus
@@ -59,14 +61,19 @@ function Update-WindowsAutopilotInfo {
     #endregion
     #region Remove from all Deployment Groups except current Deployment Group
     if ($RemovalGroups) {
-        Foreach-Object $GroupName in $RemovalGroups { 
-            $GroupId = Get-AADGroup -Filter "displayname eq '$GroupName'"
+        $RemovalGroups | Foreach-Object {
+            $GroupName = $_
+            Write-Verbose -Verbose "GroupName: '$GroupName'" 
+            $GroupId = (Get-AADGroup -Filter "displayname eq '$GroupName'").id
+            Write-Verbose "GroupId: '$GroupId'"
             $AzureAdDeviceId = (Get-AutoPilotDevice -serial $serialnumber).azureAdDeviceId
-            $ObjectID = (Get-AzureADDevice -SearchString "$AzureAdDeviceId").ObjectId
-            Write-Warning "Removing $((Get-AutoPilotDevice -serial $serialnumber).displayname) from Group $GroupName."
-            Invoke-MSGraphRequest -Url "https://graph.microsoft.com/v1.0/groups/$($GroupId)/members/$($ObjectID)/$ref" -HttpMethod DELETE
+            Write-Verbose "AzureAdDeviceId: $AzureAdDeviceId"
+            $ObjectID = (Get-AzureADDevice -Filter "deviceId eq guid'$AzureAdDeviceId'").ObjectId
+            Write-Verbose "AzureAdObjectId: '$ObjectID'"
+            Write-Warning "Removing $((Get-AutoPilotDevice -serial $serialnumber).displayname) from Group '$GroupName'."
+            Remove-AzureADGroupMember -ObjectId $GroupId -MemberId $ObjectID
         }
-        if ($ProfileWait) {
+        if ($Assign) {
             
         }
     }    

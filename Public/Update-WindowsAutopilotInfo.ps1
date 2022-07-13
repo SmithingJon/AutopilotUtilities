@@ -49,14 +49,57 @@ function Update-WindowsAutopilotInfo {
     Connect-AzureAD -TenantId $id | Out-Null
     $serialnumber = (Get-WmiObject -Class "WIN32_BIOS" -Property serialNumber).serialNumber
     #region If $assign, Check if device has an Autopilot Deployment Profile.
-    if ($Assign) {
-        $AssignmentStatus = (Get-AutopilotRecord).deploymentProfileAssignmentStatus
-        if ($AssignmentStatus -contains ('assignedUnkownSyncState') -or ('pending')) {
-            $Assign = $true
-        } 
+    function Wait-AutopilotAssign {
+        [CmdletBinding()]
+        param (
+            [Parameter()]
+            [switch]
+            $unassign
+        )
+        if ($unassign){
+			$assignStart = Get-Date
+			$processingCount = 1
+			while ($processingCount -gt 0)
+			{
+				$processingCount = 0
+				$autopilotDevices | % {
+					$device = Get-AutopilotDevice -id $_.id -Expand
+					if (-not ($device.deploymentProfileAssignmentStatus.StartsWith("notAssigned"))) {
+						$processingCount = $processingCount + 1
+					}
+				}
+				$deviceCount = $autopilotDevices.Length
+				Write-Host "Waiting for $processingCount of $deviceCount to be unassigned"
+				if ($processingCount -gt 0){
+					Start-Sleep 30
+				}	
+			}
+			$assignDuration = (Get-Date) - $assignStart
+			$assignSeconds = [Math]::Ceiling($assignDuration.TotalSeconds)
+			Write-Host "Profile Unassigned from device.  Elapsed time to complete unassignment: $assignSeconds seconds"	
+		}
         else {
-            $Assign = $false
-        }
+			$assignStart = Get-Date
+			$processingCount = 1
+			while ($processingCount -gt 0)
+			{
+				$processingCount = 0
+				$autopilotDevices | % {
+					$device = Get-AutopilotDevice -id $_.id -Expand
+					if (-not ($device.deploymentProfileAssignmentStatus.StartsWith("assigned"))) {
+						$processingCount = $processingCount + 1
+					}
+				}
+				$deviceCount = $autopilotDevices.Length
+				Write-Host "Waiting for $processingCount of $deviceCount to be assigned"
+				if ($processingCount -gt 0){
+					Start-Sleep 30
+				}	
+			}
+			$assignDuration = (Get-Date) - $assignStart
+			$assignSeconds = [Math]::Ceiling($assignDuration.TotalSeconds)
+			Write-Host "Profiles assigned to device.  Elapsed time to complete assignment: $assignSeconds seconds"	
+		}
     }
     #endregion
     #region Remove from all Deployment Groups except current Deployment Group
@@ -74,7 +117,7 @@ function Update-WindowsAutopilotInfo {
             Remove-AzureADGroupMember -ObjectId $GroupId -MemberId $ObjectID
         }
         if ($Assign) {
-            
+            Wait-AutopilotAssign -unassign
         }
     }    
     #endregion

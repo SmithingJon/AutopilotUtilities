@@ -220,6 +220,7 @@ function Start-AutopilotUtilities {
         Invoke-LoadModule AutopilotOOBE
         Invoke-LoadModule AzureAD
         Invoke-LoadModule Microsoft.Graph.Intune
+        Invoke-LoadModule WindowsAutoPilotIntune
         Test-MSGraph
 <#        #================================================
         #   Test-AutopilotRecord

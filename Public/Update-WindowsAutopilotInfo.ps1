@@ -132,7 +132,7 @@ function Update-WindowsAutopilotInfo {
         $ObjectID = (Get-AzureADDevice -Filter "deviceId eq guid'$AzureAdDeviceId'").ObjectId
         Write-Verbose "AzureAdObjectId: '$ObjectID'"
         Write-Warning "Adding Device with Serial $((Get-AutoPilotDevice -serial $serialnumber).serialNumber) to Group '$GroupName'."
-        Add-AzureADGroupMember -ObjectId $GroupId -MemberId $ObjectID
+        Add-AzureADGroupMember -ObjectId $GroupId -RefObjectId $ObjectID
     }
     if ($Assign) {
         Wait-AutopilotAssign

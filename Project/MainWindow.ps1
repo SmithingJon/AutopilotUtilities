@@ -777,8 +777,13 @@ $formMainWindowControlApplyButton.add_Click( {
             Write-Host -ForegroundColor Cyan "Device will be removed from groups $RemovalGroups"
         }
         else {
-            $RemovalGroups = (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $NewDeploymentGroup | Where-Object SideIndicator -match '<=').InputObject
-            Write-Host -ForegroundColor Cyan "Device will be removed from groups $RemovalGroups"        
+            if ($CurrentGroupMembership) {
+                $RemovalGroups = (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $NewDeploymentGroup | Where-Object SideIndicator -match '<=').InputObject
+                Write-Host -ForegroundColor Cyan "Device will be removed from groups $RemovalGroups" 
+            }
+            else {
+                Write-Host -ForegroundColor Cyan "No groups to remove Device from."
+            }
         }
     }    
     else {

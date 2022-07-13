@@ -113,7 +113,7 @@ function Update-WindowsAutopilotInfo {
             Write-Verbose "AzureAdDeviceId: $AzureAdDeviceId"
             $ObjectID = (Get-AzureADDevice -Filter "deviceId eq guid'$AzureAdDeviceId'").ObjectId
             Write-Verbose "AzureAdObjectId: '$ObjectID'"
-            Write-Warning "Removing $((Get-AutoPilotDevice -serial $serialnumber).displayname) from Group '$GroupName'."
+            Write-Warning "Removing Device with Serial $((Get-AutoPilotDevice -serial $serialnumber).serialNumber) from Group '$GroupName'."
             Remove-AzureADGroupMember -ObjectId $GroupId -MemberId $ObjectID
         }
         if ($Assign) {
@@ -122,6 +122,41 @@ function Update-WindowsAutopilotInfo {
     }    
     #endregion
     #region add to groups
-
+    if ($DeploymentGroup) {
+        $GroupName = $DeploymentGroup
+        Write-Verbose -Verbose "GroupName: '$GroupName'" 
+        $GroupId = (Get-AADGroup -Filter "displayname eq '$GroupName'").id
+        Write-Verbose "GroupId: '$GroupId'"
+        $AzureAdDeviceId = (Get-AutoPilotDevice -serial $serialnumber).azureAdDeviceId
+        Write-Verbose "AzureAdDeviceId: $AzureAdDeviceId"
+        $ObjectID = (Get-AzureADDevice -Filter "deviceId eq guid'$AzureAdDeviceId'").ObjectId
+        Write-Verbose "AzureAdObjectId: '$ObjectID'"
+        Write-Warning "Adding Device with Serial $((Get-AutoPilotDevice -serial $serialnumber).serialNumber) to Group '$GroupName'."
+        Add-AzureADGroupMember -ObjectId $GroupId -MemberId $ObjectID
+    }
+    if ($Assign) {
+        Wait-AutopilotAssign
+    }
     #endregion
+    #region Update GroupTag
+    if ($GroupTag) {
+        $AutopilotID = (Get-AutoPilotDevice -serial $serialnumber).id
+        Write-Warning "Setting GroupTag for Device with Serial $((Get-AutoPilotDevice -serial $serialnumber).serialNumber) to '$GroupTag'"
+        Set-AutopilotDevice -id $AutopilotID -groupTag $GroupTag
+    }
+    if ($Assign) {
+        Wait-AutopilotAssign
+    }
+    #endregion
+    #region Update AssignedComputerName
+    if ($AssignedComputerName) {
+        $AutopilotID = (Get-AutoPilotDevice -serial $serialnumber).id
+        Write-Warning "Setting AssignedComputername for Device with Serial $((Get-AutoPilotDevice -serial $serialnumber).serialNumber) to '$AssignedComputername'"
+        Set-AutopilotDevice -id $AutopilotID -displayName $AssignedComputerName
+    }
+    #endregion
+    if ($Reboot) {
+        Write-Warning Restart-Computer
+        Restart-Computer -Force
+    }
 }

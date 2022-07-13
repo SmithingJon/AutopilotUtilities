@@ -418,7 +418,17 @@ $Global:AutopilotUtilities.DeploymentGroupOptions | ForEach-Object {
 
 # Set the Default
 if ($Global:AutopilotUtilities.DeploymentGroup) {
-    $formMainWindowControlDeploymentGroupComboBox.Text = (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $CurrentGroupMembership -IncludeEqual -ExcludeDifferent).InputObject
+    $formMainWindowControlDeploymentGroupComboBox.Text = {
+        if ($DeploymentGroupOptions) {
+            (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $CurrentGroupMembership -IncludeEqual -ExcludeDifferent).InputObject
+        }
+        else {
+            $CurrentGroupMembership
+        }
+    }
+}         
+else {
+    $formMainWindowControlDeploymentGroupComboBox.Text = $CurrentGroupMembership
 }
 #================================================
 #   RemoveFromGroups Control
@@ -826,7 +836,7 @@ $formMainWindowControlApplyButton.add_Click( {
 
     Start-Sleep -Seconds 3
     $formMainWindow.Title = "AutopilotUtilities $ModuleVersion : Applying Device"
-    Get-WindowsAutoPilotInfo @Params
+    Update-WindowsAutoPilotInfo @Params
     $formMainWindow.Title = "AutopilotUtilities $ModuleVersion : Restart Device"
 
     if ((Get-Process -Name powershell).MainWindowTitle -match 'Running') {

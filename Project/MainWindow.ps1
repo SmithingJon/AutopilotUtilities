@@ -797,6 +797,13 @@ $formMainWindowControlApplyButton.add_Click( {
             Write-Host -ForegroundColor Cyan "Device will be rmoved from groups $RemovalGroups."
         }
     }
+
+    if ($CurrentGroupMembership -contains $NewDeploymentGroup) {
+        $Params.DeploymentGroup = ''
+    }
+    else {
+        $Params.DeploymentGroup = $NewDeploymentGroup
+    }
     #endregion
 
 

@@ -808,7 +808,7 @@ $formMainWindowControlApplyButton.add_Click( {
         }
         else { # Only replace current Deployment Group with New Deployment Group
 
-            $RemovalGroups = (Compare-Object- -ReferenceObject $((Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $NewDeploymentGroup -ErrorAction SilentlyContinue | Where-Object SideIndicator -match '<=').InputObject) -DifferenceObject $CurrentGroupMembership -IncludeEqual -ExcludeDifferent -ErrorAction SilentlyContinue).InputObject
+            $RemovalGroups = (Compare-Object -ReferenceObject $((Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $NewDeploymentGroup -ErrorAction SilentlyContinue | Where-Object SideIndicator -match '<=').InputObject) -DifferenceObject $CurrentGroupMembership -IncludeEqual -ExcludeDifferent -ErrorAction SilentlyContinue).InputObject
         }
         if ($RemovalGroups){
             $Params.RemovalGroups = $RemovalGroups

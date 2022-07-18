@@ -744,41 +744,54 @@ $formMainWindowControlApplyButton.add_Click( {
     $Params = @{
         Online = $true
     }
-
+    #region Delete Intune Device Record
     if ($formMainWindowControlDeleteIntuneCheckbox.IsChecked) {
         Remove-IntuneManagedDevice -managedDeviceId $(Get-IntuneWIndowsDevice.id)
     }
-
+    #endregion
+    
+    #region Delete Autopilot Device Record
     if ($formMainWindowControlDeleteAutoPilotCheckbox.isChecked) {
         $AzureAdDeviceId = (Get-AutopilotRecord -serialNumber $SerialNumber).azureAdDeviceId
         Remove-AutopilotDevice -serialNumber $SerialNumber
     }
+    #endregion
 
+    #region Delete Azure Device Record
     if ($formMainWindowControlDeleteAzureCheckbox.IsChecked) {
         if (!(Get-AutopilotRecord)) {
             Remove-AzureADDevice -ObjectId $AzureAdDeviceId
         }
     }
+    #endregion
 
+    #region Assign Logic
     if ($formMainWindowControlAssignCheckbox.IsChecked) {
         $Params.Assign = $true
     }
+    #endregion
 
+    #region Deployment Group
+    # Use the text in the Deployment Group Combobox for $DeploymentGroup
     if ($formMainWindowControlDeploymentGroupComboBox.Text -gt 0) {
         $NewDeploymentGroup = $formMainWindowControlDeploymentGroupComboBox.Text
         Write-Host -ForegroundColor Cyan "Assignment Group: $NewDeploymentGroup."
     }
-    #Region RemoveFromGroups Logic
+    #endregion
 
-    if (!($formMainWindowControlDeploymentGroupComboBox.Text)) {
+    # Region RemoveFromGroups Logic                 
+    
+    if (!($formMainWindowControlDeploymentGroupComboBox.Text)) { # If the combobox is empty
+        # Clean Groups
         if (($formMainWindowControlRemoveFromAllRadioButton.IsChecked)) {
             # Since We don't have any text in the New group, we are going to remove from all deployment groups.
             $RemovalGroups = $CurrentGroupMembership
             Write-Host -ForegroundColor Cyan "Device will be removed from groups $RemovalGroups"
         }
         else {
+            # Only replace current Deployment Group with New Deployment Group
             if ($CurrentGroupMembership) {
-                $RemovalGroups = (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $NewDeploymentGroup | Where-Object SideIndicator -match '<=').InputObject
+                $RemovalGroups = (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $CurrentGroupMembership | Where-Object SideIndicator -match '=>').InputObject
                 Write-Host -ForegroundColor Cyan "Device will be removed from groups $RemovalGroups" 
             }
             else {
@@ -786,16 +799,16 @@ $formMainWindowControlApplyButton.add_Click( {
             }
         }
     }    
-    else {
-        # We now want to make sure we keep the device in the deployment group if the deployment group hasn't changed.
-        # If 
-        if (($formMainWindowControlRemoveFromAllRadioButton.IsChecked)) {
-            # We are going to remove the device from all groups except the NewDeploymentGroup.
+    else { # The Combobox contains text
+        # Keep the device in the deployment group if the deployment group is unchanged
+        if (($formMainWindowControlRemoveFromAllRadioButton.IsChecked)) { # If Clean Groups is checked
+            # Remove the device from all groups except the NewDeploymentGroup.
             #$SaveGroups = (Compare-Object -ReferenceObject $CurrentGroupMembership -DifferenceObject $NewDeploymentGroup -ExcludeDifferent -IncludeEqual).InputObject
             $RemovalGroups = (Compare-Object -ReferenceObject $CurrentGroupMembership -DifferenceObject $NewDeploymentGroup | Where-Object SideIndicator -match '<=').InputObject
         }
-        else {
-            $RemovalGroups = (Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $NewDeploymentGroup | Where-Object SideIndicator -match '<=').InputObject
+        else { # Only replace current Deployment Group with New Deployment Group
+
+            $RemovalGroups = (Compare-Object- -ReferenceObject $((Compare-Object -ReferenceObject $DeploymentGroupOptions -DifferenceObject $NewDeploymentGroup -ErrorAction SilentlyContinue | Where-Object SideIndicator -match '<=').InputObject) -DifferenceObject $CurrentGroupMembership -IncludeEqual -ExcludeDifferent -ErrorAction SilentlyContinue).InputObject
         }
         if ($RemovalGroups){
             $Params.RemovalGroups = $RemovalGroups

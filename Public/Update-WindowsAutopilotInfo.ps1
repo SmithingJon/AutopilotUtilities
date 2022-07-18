@@ -44,9 +44,9 @@ function Update-WindowsAutopilotInfo {
         $Reboot
     )
     Test-MSGraph
-    $id = (Test-MSGraph -output).id
+    $upn = (Connect-MSGraph).upn
     Write-Verbose "Connecting to AzureAD"
-    Connect-AzureAD -TenantId $id | Out-Null
+    Connect-AzureAD -AccountId $upn | Out-Null
     $serialnumber = (Get-WmiObject -Class "WIN32_BIOS" -Property serialNumber).serialNumber
     #region If $assign, Check if device has an Autopilot Deployment Profile.
     function Wait-AutopilotAssign {
@@ -62,12 +62,10 @@ function Update-WindowsAutopilotInfo {
 			while ($processingCount -gt 0)
 			{
 				$processingCount = 0
-				$autopilotDevices | % {
-					$device = Get-AutopilotDevice -id $_.id -Expand
+					$device = Get-AutoPilotDevice -serial $serialnumber -Expand
 					if (-not ($device.deploymentProfileAssignmentStatus.StartsWith("notAssigned"))) {
 						$processingCount = $processingCount + 1
 					}
-				}
 				$deviceCount = $autopilotDevices.Length
 				Write-Host "Waiting for $processingCount of $deviceCount to be unassigned"
 				if ($processingCount -gt 0){
@@ -84,12 +82,10 @@ function Update-WindowsAutopilotInfo {
 			while ($processingCount -gt 0)
 			{
 				$processingCount = 0
-				$autopilotDevices | % {
-					$device = Get-AutopilotDevice -id $_.id -Expand
+					$device = Get-AutoPilotDevice -serial $serialnumber -Expand
 					if (-not ($device.deploymentProfileAssignmentStatus.StartsWith("assigned"))) {
 						$processingCount = $processingCount + 1
 					}
-				}
 				$deviceCount = $autopilotDevices.Length
 				Write-Host "Waiting for $processingCount of $deviceCount to be assigned"
 				if ($processingCount -gt 0){
@@ -117,7 +113,7 @@ function Update-WindowsAutopilotInfo {
             Remove-AzureADGroupMember -ObjectId $GroupId -MemberId $ObjectID
         }
         if ($Assign) {
-            Wait-AutopilotAssign -unassign
+            Wait-AutopilotAssign -unassign -Verbose
         }
     }    
     #endregion
@@ -135,7 +131,7 @@ function Update-WindowsAutopilotInfo {
         Add-AzureADGroupMember -ObjectId $GroupId -RefObjectId $ObjectID
     }
     if ($Assign) {
-        Wait-AutopilotAssign
+        Wait-AutopilotAssign -Verbose
     }
     #endregion
     #region Update GroupTag
